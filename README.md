@@ -79,7 +79,9 @@ since query already contains all columns, i.e. to_sql returns same string.
 Works with selection in all formats:
 
 1 'table_name.column' or 'table_name.column as column_1' with distinct on also
+
 2 { table_name: column } or { table_name: [column1, column2] }
+
 3 { table_name: 2 } where 2 relates to upper syntax
 
 ## Usage (рус)
@@ -89,7 +91,9 @@ Works with selection in all formats:
 Поддерживает select в следующих форматах :
 
 1 'table_name.column' or 'table_name.column as column_1' with distinct on also
+
 2 { table_name: column } or { table_name: [column1, column2] }
+
 3 { table_name: 2 } where 2 relates to upper syntax
 
 ## Contributing
