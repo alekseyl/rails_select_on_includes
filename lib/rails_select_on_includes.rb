@@ -48,7 +48,7 @@ module ActiveRecord
 
         private
         def flatten_hash_values( some_hash )
-          some_hash.values.map{ |value| value.is_a?(Hash) ? all_hash_values( value ) : value }.flatten!
+          some_hash.values.map{ |value| value.is_a?(Hash) ? flatten_hash_values( value ) : value }.flatten!
         end
       end
     end
