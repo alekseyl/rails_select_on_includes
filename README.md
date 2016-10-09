@@ -96,6 +96,10 @@ Works with selection in all formats:
 
 3 { table_name: 2 } where 2 relates to upper syntax
 
+## Testing 
+
+Comming soon :)
+
 ## Contributing
 
 Bug reports and pull requests are welcome on GitHub at https://github.com/[USERNAME]/rails_select_on_includes.
