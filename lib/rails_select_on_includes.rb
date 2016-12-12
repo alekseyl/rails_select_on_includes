@@ -34,8 +34,8 @@ module ActiveRecord
             elsif sv.is_a?(String)
               # this is the case of long raw select
               sv.split( ", " ).each do |sub_sv|
-                if sub_sv[/.+ as .+/]
-                  selected_column = sub_sv[/ as .+/][4..-1]
+                if sub_sv[/.+ as .+/i]
+                  selected_column = sub_sv[/ as .+/i][4..-1]
                   @base_class_node_aliases << [selected_column, selected_column]
                 elsif sub_sv[/.+\.[^\*]+/]
                   selected_column = sub_sv[/\..+/][1..-1]
