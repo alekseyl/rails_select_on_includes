@@ -58,38 +58,37 @@ module ActiveRecord
   module FinderMethods
 
     def find_with_associations
-      # NOTE: the JoinDependency constructed here needs to know about
-      #       any joins already present in `self`, so pass them in
-      #
-      # failing to do so means that in cases like activerecord/test/cases/associations/inner_join_association_test.rb:136
-      # incorrect SQL is generated. In that case, the join dependency for
-      # SpecialCategorizations is constructed without knowledge of the
-      # preexisting join in joins_values to categorizations (by way of
-      # the `has_many :through` for categories).
-      #
-      join_dependency = construct_join_dependency(joins_values)
+        # NOTE: the JoinDependency constructed here needs to know about
+        #       any joins already present in `self`, so pass them in
+        #
+        # failing to do so means that in cases like activerecord/test/cases/associations/inner_join_association_test.rb:136
+        # incorrect SQL is generated. In that case, the join dependency for
+        # SpecialCategorizations is constructed without knowledge of the
+        # preexisting join in joins_values to categorizations (by way of
+        # the `has_many :through` for categories).
+        #
+        join_dependency = construct_join_dependency(joins_values)
 
-      aliases  = join_dependency.aliases
-      relation = select aliases.columns
-      relation = apply_join_dependency(relation, join_dependency)
+        aliases  = join_dependency.aliases
+        relation = select aliases.columns
+        relation = apply_join_dependency(relation, join_dependency)
 
-      if block_given?
-        yield relation
-      else
-        if ActiveRecord::NullRelation === relation
-          []
+        if block_given?
+          yield relation
         else
-          arel = relation.arel
-          rows = connection.select_all(arel, 'SQL', arel.bind_values + relation.bind_values)
-          #DISTINCTION IS HERE:
-          # now we gently mokey-patching existing column aliases with select values
-          aliases.update_aliases_to_select_values(values[:select]) unless values[:select].blank?
+          if ActiveRecord::NullRelation === relation
+            []
+          else
+            arel = relation.arel
+            rows = connection.select_all(arel, 'SQL', relation.bound_attributes)
+            #DISTINCTION IS HERE:
+            # now we gently mokey-patching existing column aliases with select values
+            aliases.update_aliases_to_select_values(values[:select]) unless values[:select].blank?
 
-          join_dependency.instantiate(rows, aliases)
+            join_dependency.instantiate(rows, aliases)
+          end
         end
-      end
     end
-
   end
 end
 
