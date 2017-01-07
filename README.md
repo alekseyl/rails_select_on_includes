@@ -1,9 +1,13 @@
+#Rails version
+
+Supports rails 4.x and rails 5 now!
+
 # RailsSelectOnIncludes
 
-This gem solves issue in rails: https://github.com/rails/rails/issues/15185 for base_class.
+This gem solves issue in rails: https://github.com/rails/rails/issues/15185 for base_class. 
 
 It was impossible to select virtual attributes to object from its relations or any other way 
-when using includes and where. 
+when using includes and where ( actually when includes becomes eager_load, i.e. when you add not SOME_CONDITION, but SOME_CONDITION_ON_INCLUDES ). 
 
 Example from upper rails issue: 
 
@@ -30,7 +34,7 @@ post.comments.first.testval # Undefined method!
 
 Данный gem решает проблему в рельсах с виртуальными аттрибутами при использовании includes, 
 когда рельсы собирают в запрос в joins с алиасами на все аттрибуты. В настоящий момент в модель не собираются 
-никаким боком виртуальные аттрибуты.
+никаким боком виртуальные аттрибуты ( имеется ввиду когда includes ведет себя как eager_load и создает сложный одинарный запрос ).
 
 В частности проблема описана здесь: https://github.com/rails/rails/issues/15185 
 
@@ -56,12 +60,16 @@ post.comments.first.testval # Undefined method!
 ```
 
 
-## Installation
+## Installation 
 
 Add this line to your application's Gemfile:
 
 ```ruby
-gem 'rails_select_on_includes'
+#rails 4
+gem 'rails_select_on_includes', '~> 0.4.3' 
+
+#rails 5
+gem 'rails_select_on_includes', '~> 0.5.0' 
 ```
 
 And then execute:
