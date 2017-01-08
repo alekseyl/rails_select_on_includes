@@ -7,7 +7,7 @@ Supports rails 4.x and rails 5 now!
 This gem solves issue in rails: https://github.com/rails/rails/issues/15185 for base_class. 
 
 It was impossible to select virtual attributes to object from its relations or any other way 
-when using includes and where ( actually when includes becomes eager_load, i.e. when you add not SOME_CONDITION, but SOME_CONDITION_ON_INCLUDES ). 
+when using includes and where ( actually when includes becomes eager_load, i.e. when you add not SOME_CONDITION, but SOME_CONDITION_ON_INCLUDES, http://blog.bigbinary.com/2013/07/01/preload-vs-eager-load-vs-joins-vs-includes.html ). 
 
 Example from upper rails issue: 
 
@@ -34,7 +34,7 @@ post.comments.first.testval # Undefined method!
 
 Данный gem решает проблему в рельсах с виртуальными аттрибутами при использовании includes, 
 когда рельсы собирают в запрос в joins с алиасами на все аттрибуты. В настоящий момент в модель не собираются 
-никаким боком виртуальные аттрибуты ( имеется ввиду когда includes ведет себя как eager_load и создает сложный одинарный запрос ).
+никаким боком виртуальные аттрибуты ( имеется ввиду когда includes ведет себя как eager_load и создает сложный одинарный запрос, подробнее: http://blog.bigbinary.com/2013/07/01/preload-vs-eager-load-vs-joins-vs-includes.html ).
 
 В частности проблема описана здесь: https://github.com/rails/rails/issues/15185 
 
