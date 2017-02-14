@@ -4,7 +4,6 @@ require 'active_support/core_ext/string/filters'
 module ActiveRecord
   module Associations
     class JoinDependency # :nodoc:
-
       class Aliases # :nodoc:
         def initialize(tables)
           @tables = tables
@@ -51,9 +50,49 @@ module ActiveRecord
           some_hash.values.map{ |value| value.is_a?(Hash) ? flatten_hash_values( value ) : value }.flatten
         end
       end
+
+      class JoinPart
+        def instantiate(row, aliases, column_types = {}, &block)
+          base_klass.instantiate(extract_record(row, aliases), column_types, &block)
+        end
+      end
+
+      def instantiate(result_set, aliases)
+        primary_key = aliases.column_alias(join_root, join_root.primary_key)
+
+        seen = Hash.new { |i, object_id|
+          i[object_id] = Hash.new { |j, child_class|
+            j[child_class] = {}
+          }
+        }
+
+        model_cache = Hash.new { |h,klass| h[klass] = {} }
+        parents = model_cache[join_root]
+        column_aliases = aliases.column_aliases join_root
+
+        message_bus = ActiveSupport::Notifications.instrumenter
+
+        payload = {
+            record_count: result_set.length,
+            class_name: join_root.base_klass.name
+        }
+
+        message_bus.instrument('instantiation.active_record', payload) do
+          result_set.each { |row_hash|
+            parent_key = primary_key ? row_hash[primary_key] : row_hash
+            # DISTINCTION PART > join_root.instantiate(row_hash, column_aliases, result_set.column_types )
+            # PREVIOUS         > join_root.instantiate(row_hash, column_aliases )
+            parent = parents[parent_key] ||= join_root.instantiate(row_hash, column_aliases, result_set.column_types )
+            construct(parent, join_root, row_hash, result_set, seen, model_cache, aliases)
+          }
+        end
+        parents.values
+      end
+
     end
   end
 end
+
 module ActiveRecord
   module FinderMethods
 
@@ -81,7 +120,7 @@ module ActiveRecord
           else
             arel = relation.arel
             rows = connection.select_all(arel, 'SQL', relation.bound_attributes)
-            #DISTINCTION IS HERE:
+            #1 DISTINCTION IS HERE:
             # now we gently mokey-patching existing column aliases with select values
             aliases.update_aliases_to_select_values(values[:select]) unless values[:select].blank?
 
