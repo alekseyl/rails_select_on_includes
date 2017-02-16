@@ -56,7 +56,7 @@ require 'active_support/core_ext/string/filters'
   end
 end
 
-::ActiveRecord::Associations::JoinDependency::JoinPart.class_eval do
+::ActiveRecord::Associations::JoinDependency::JoinBase.class_eval do
   def instantiate(row, aliases, column_types = {}, &block)
     base_klass.instantiate(extract_record(row, aliases), column_types, &block)
   end
