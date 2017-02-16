@@ -1,5 +1,7 @@
-#Rails version
+# New Features
+Selected virtual attributes will be now typecasted as usual attributes
 
+#Rails version
 Supports rails 4.x and rails 5 now!
 
 # RailsSelectOnIncludes
@@ -66,10 +68,10 @@ Add this line to your application's Gemfile:
 
 ```ruby
 #rails 4
-gem 'rails_select_on_includes', '~> 0.4.3' 
+gem 'rails_select_on_includes', '~> 0.4.8' 
 
 #rails 5
-gem 'rails_select_on_includes', '~> 0.5.0' 
+gem 'rails_select_on_includes', '~> 0.5.2' 
 ```
 
 And then execute:
@@ -82,8 +84,9 @@ Or install it yourself as:
 
 ## Usage
 
-Works out of the box, gently monkey-patching base-class alias columns. It not affecting query creation, 
-since query already contains all columns, i.e. to_sql returns same string.
+Works out of the box, monkey-patches base-class alias columns, for select attributes, and JoinBase with JoinDependency to proper typecasting. 
+
+It not affecting query creation, since query already contains all columns, i.e. to_sql returns same string.
 Works with selection in all formats:
 
 1 'table_name.column' or 'table_name.column as column_1' or "distinct on(..) table_name.column as column_1"  
@@ -94,7 +97,7 @@ Works with selection in all formats:
 
 ## Usage (рус)
 
-Работает из коробки, нежно манки-патча алиасы прямо перед инстанцированием коллекции, не влияет на создаваемый запрос в БД т.е to_sql не меняется.  
+Работает из коробки, нежно манки-патча алиасы прямо перед инстанцированием коллекции, а так же не менее нежно JoinBase и JoinDependency :), чтобы полученные аттрибуты были приличных типов, а не только строк, не влияет на создаваемый запрос в БД т.е to_sql не меняется.  
 
 Поддерживает select в следующих форматах :
 
