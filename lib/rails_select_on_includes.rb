@@ -1,112 +1,106 @@
 require 'active_support/deprecation'
 require 'active_support/core_ext/string/filters'
 
-module ActiveRecord
-  module Associations
-    class JoinDependency # :nodoc:
 
-      class Aliases # :nodoc:
-        def initialize(tables)
-          @tables = tables
-          @alias_cache = tables.each_with_object({}) { |table,h|
-            h[table.node] = table.columns.each_with_object({}) { |column,i|
-              i[column.name] = column.alias
-            }
-          }
-          @name_and_alias_cache = tables.each_with_object({}) { |table,h|
-            h[table.node] = table.columns.map { |column|
-              [column.name, column.alias]
-            }
-            @base_class_node_aliases ||= h[table.node] if table.node.is_a?(ActiveRecord::Associations::JoinDependency::JoinBase)
-          }
+::ActiveRecord::Associations::JoinDependency::Aliases.class_eval do # :nodoc:
+  def initialize(tables)
+    @tables = tables
+    @alias_cache = tables.each_with_object({}) { |table,h|
+      h[table.node] = table.columns.each_with_object({}) { |column,i|
+        i[column.name] = column.alias
+      }
+    }
+    @name_and_alias_cache = tables.each_with_object({}) { |table,h|
+      h[table.node] = table.columns.map { |column|
+        [column.name, column.alias]
+      }
+      @base_class_node_aliases ||= h[table.node] if table.node.is_a?(ActiveRecord::Associations::JoinDependency::JoinBase)
+    }
 
-          @virtual_attributes_names = []
-        end
-        # valid formats are:
-        # 1 'table_name.column' or 'table_name.column as column_1' will be parsed! distinct on can be used also
-        # 2 {table_name: column} or { table_name: [column1, column2] }
-        # 3 table_name: 2
-        def update_aliases_to_select_values( select_values )
-          return if select_values.blank?
-          select_values.each do |sv|
-            # if sv is symbol that we assume that its a base table column and it will be aliased and added as usual
-            # all we need is some specials joins+select from related tables
-            if sv.is_a?(Hash)
-              flatten_hash_values(sv).each{|sub_sv| @base_class_node_aliases << [sub_sv, sub_sv]; @virtual_attributes_names << sub_sv }
-            elsif sv.is_a?(String)
-              # this is the case of long raw select
-              sv.split( ", " ).each do |sub_sv|
-                if sub_sv[/.+ as .+/i]
-                  selected_column = sub_sv[/ as .+/i][4..-1]
-                  @base_class_node_aliases << [selected_column, selected_column]
-                  @virtual_attributes_names << selected_column
-                elsif sub_sv[/.+\.[^\*]+/]
-                  selected_column = sub_sv[/\..+/][1..-1]
-                  @base_class_node_aliases << [selected_column, selected_column]
-                  @virtual_attributes_names << selected_column
-                end
-              end
-            end
+    @virtual_attributes_names = []
+  end
+  # valid formats are:
+  # 1 'table_name.column' or 'table_name.column as column_1' will be parsed! distinct on can be used also
+  # 2 {table_name: column} or { table_name: [column1, column2] }
+  # 3 table_name: 2
+  def update_aliases_to_select_values( select_values )
+    return if select_values.blank?
+    select_values.each do |sv|
+      # if sv is symbol that we assume that its a base table column and it will be aliased and added as usual
+      # all we need is some specials joins+select from related tables
+      if sv.is_a?(Hash)
+        flatten_hash_values(sv).each{|sub_sv| @base_class_node_aliases << [sub_sv, sub_sv]; @virtual_attributes_names << sub_sv }
+      elsif sv.is_a?(String)
+        # this is the case of long raw select
+        sv.split( ", " ).each do |sub_sv|
+          if sub_sv[/.+ as .+/i]
+            selected_column = sub_sv[/ as .+/i][4..-1]
+            @base_class_node_aliases << [selected_column, selected_column]
+            @virtual_attributes_names << selected_column
+          elsif sub_sv[/.+\.[^\*]+/]
+            selected_column = sub_sv[/\..+/][1..-1]
+            @base_class_node_aliases << [selected_column, selected_column]
+            @virtual_attributes_names << selected_column
           end
         end
-
-        def slice_selected_attr_types( column_types )
-          column_types.slice( *@virtual_attributes_names )
-        end
-
-        private
-        def flatten_hash_values( some_hash )
-          some_hash.values.map{ |value| value.is_a?(Hash) ? flatten_hash_values( value ) : value }.flatten
-        end
       end
-
-      class JoinBase
-        def instantiate(row, aliases, column_types = {}, &block)
-          base_klass.instantiate(extract_record(row, aliases), column_types, &block)
-        end
-      end
-
-      def instantiate(result_set, aliases)
-        primary_key = aliases.column_alias(join_root, join_root.primary_key)
-
-        seen = Hash.new { |h,parent_klass|
-          h[parent_klass] = Hash.new { |i,parent_id|
-            i[parent_id] = Hash.new { |j,child_klass| j[child_klass] = {} }
-          }
-        }
-
-        model_cache = Hash.new { |h,klass| h[klass] = {} }
-        parents = model_cache[join_root]
-        column_aliases = aliases.column_aliases join_root
-
-        message_bus = ActiveSupport::Notifications.instrumenter
-
-        payload = {
-            record_count: result_set.length,
-            class_name: join_root.base_klass.name
-        }
-
-        message_bus.instrument('instantiation.active_record', payload) do
-          result_set.each { |row_hash|
-            parent_key = primary_key ? row_hash[primary_key] : row_hash
-            # DISTINCTION PART > join_root.instantiate(row_hash, column_aliases, aliases.slice_selected_attr_types( result_set.column_types ) )
-            # PREVIOUS         > join_root.instantiate(row_hash, column_aliases )
-            parent = parents[parent_key] ||= join_root.instantiate(row_hash, column_aliases, aliases.slice_selected_attr_types( result_set.column_types ) )
-            construct(parent, join_root, row_hash, result_set, seen, model_cache, aliases)
-          }
-        end
-
-        parents.values
-      end
-
     end
+  end
+
+  def slice_selected_attr_types( column_types )
+    column_types.slice( *@virtual_attributes_names )
+  end
+
+  private
+  def flatten_hash_values( some_hash )
+    some_hash.values.map{ |value| value.is_a?(Hash) ? flatten_hash_values( value ) : value }.flatten
   end
 end
 
-module ActiveRecord
-  module FinderMethods
+::ActiveRecord::Associations::JoinDependency::JoinBase.class_eval do
+  def instantiate(row, aliases, column_types = {}, &block)
+    base_klass.instantiate(extract_record(row, aliases), column_types, &block)
+  end
+end
 
-    def find_with_associations
+::ActiveRecord::Associations::JoinDependency.class_eval do
+  def instantiate(result_set, aliases)
+    primary_key = aliases.column_alias(join_root, join_root.primary_key)
+
+    seen = Hash.new { |h,parent_klass|
+      h[parent_klass] = Hash.new { |i,parent_id|
+        i[parent_id] = Hash.new { |j,child_klass| j[child_klass] = {} }
+      }
+    }
+
+    model_cache = Hash.new { |h,klass| h[klass] = {} }
+    parents = model_cache[join_root]
+    column_aliases = aliases.column_aliases join_root
+
+    message_bus = ActiveSupport::Notifications.instrumenter
+
+    payload = {
+        record_count: result_set.length,
+        class_name: join_root.base_klass.name
+    }
+
+    message_bus.instrument('instantiation.active_record', payload) do
+      result_set.each { |row_hash|
+        parent_key = primary_key ? row_hash[primary_key] : row_hash
+        # DISTINCTION PART > join_root.instantiate(row_hash, column_aliases, aliases.slice_selected_attr_types( result_set.column_types ) )
+        # PREVIOUS         > join_root.instantiate(row_hash, column_aliases )
+        parent = parents[parent_key] ||= join_root.instantiate(row_hash, column_aliases, aliases.slice_selected_attr_types( result_set.column_types ) )
+        construct(parent, join_root, row_hash, result_set, seen, model_cache, aliases)
+      }
+    end
+
+    parents.values
+  end
+end
+
+
+::ActiveRecord::FinderMethods.class_eval do
+  def find_with_associations
       # NOTE: the JoinDependency constructed here needs to know about
       #       any joins already present in `self`, so pass them in
       #
@@ -138,7 +132,6 @@ module ActiveRecord
         end
       end
     end
-
-  end
 end
+
 
