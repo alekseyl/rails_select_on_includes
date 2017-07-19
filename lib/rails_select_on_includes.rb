@@ -28,21 +28,21 @@ require 'active_support/core_ext/string/filters'
     select_values.each do |sv|
       # if sv is symbol that we assume that its a base table column and it will be aliased and added as usual
       # all we need is some specials joins+select from related tables
-      if sv.is_a?(Hash)
-        flatten_hash_values(sv).each{|sub_sv| @base_class_node_aliases << [sub_sv, sub_sv]; @virtual_attributes_names << sub_sv }
-      elsif sv.is_a?(String)
-        # this is the case of long raw select
-        sv.split( ", " ).each do |sub_sv|
-          if sub_sv[/.+ as .+/i]
-            selected_column = sub_sv[/ as .+/i][4..-1]
-            @base_class_node_aliases << [selected_column, selected_column]
-            @virtual_attributes_names << selected_column
-          elsif sub_sv[/.+\.[^\*]+/]
-            selected_column = sub_sv[/\..+/][1..-1]
-            @base_class_node_aliases << [selected_column, selected_column]
-            @virtual_attributes_names << selected_column
+      case sv
+        when Hash
+          flatten_hash_values(sv).each { |sub_sv| add_virtual_attribute(sub_sv) }
+        when String
+          sv.split( ", " ).each do |sub_sv|
+            if sub_sv[/.+ as .+/i]
+              add_virtual_attribute(sub_sv[/ as .+/i][4..-1].strip)
+            elsif sub_sv[/.+\.[^\*]+/]
+              add_virtual_attribute(sub_sv[/\..+/][1..-1].strip)
+            end
           end
-        end
+        when Arel::Nodes::As
+          add_virtual_attribute(sv.right)
+        when Arel::Nodes::Function
+          add_virtual_attribute(sv.alias) if sv.alias.present?
       end
     end
   end
@@ -54,6 +54,11 @@ require 'active_support/core_ext/string/filters'
   private
   def flatten_hash_values( some_hash )
     some_hash.values.map{ |value| value.is_a?(Hash) ? flatten_hash_values( value ) : value }.flatten
+  end
+
+  def add_virtual_attribute(selected_column)
+    @base_class_node_aliases << [selected_column, selected_column]
+    @virtual_attributes_names << selected_column
   end
 end
 
