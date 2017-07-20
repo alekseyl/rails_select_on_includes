@@ -68,10 +68,10 @@ Add this line to your application's Gemfile:
 
 ```ruby
 #rails 4
-gem 'rails_select_on_includes', '~> 0.4.8' 
+gem 'rails_select_on_includes', '~> 0.4.10' 
 
 #rails 5
-gem 'rails_select_on_includes', '~> 0.5.2' 
+gem 'rails_select_on_includes', '~> 0.5.6' 
 ```
 
 And then execute:
