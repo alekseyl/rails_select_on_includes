@@ -20,7 +20,7 @@ require 'active_support/core_ext/string/filters'
     @virtual_attributes_names = []
   end
   # valid formats are:
-  # 1 'table_name.column' or 'table_name.column as column_1' will be parsed! distinct on can be used also
+  # 1 'table_name.column' or 'table_name.column as column_1' or '(select ..) as column_1' will be parsed! distinct on can be used also
   # 2 {table_name: column} or { table_name: [column1, column2] }
   # 3 table_name: 2
   def update_aliases_to_select_values( select_values )
@@ -34,7 +34,7 @@ require 'active_support/core_ext/string/filters'
         when String
           sv.split( ", " ).each do |sub_sv|
             if sub_sv[/.+ as .+/i]
-              add_virtual_attribute(sub_sv[/ as .+/i][4..-1].strip)
+              add_virtual_attribute(sub_sv.rpartition(/ as /i).last.strip)
             elsif sub_sv[/.+\.[^\*]+/]
               add_virtual_attribute(sub_sv[/\..+/][1..-1].strip)
             end
