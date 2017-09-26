@@ -20,7 +20,7 @@ require 'active_support/core_ext/string/filters'
     @virtual_attributes_names = []
   end
   # valid formats are:
-  # 1 'table_name.column' or 'table_name.column as column_1' will be parsed! distinct on can be used also
+  # 1 'table_name.column' or 'table_name.column as column_1' or '(select ..) as column_1' will be parsed! distinct on can be used also
   # 2 {table_name: column} or { table_name: [column1, column2] }
   # 3 table_name: 2
   def update_aliases_to_select_values( select_values )
@@ -34,7 +34,7 @@ require 'active_support/core_ext/string/filters'
         when String
           sv.split( ", " ).each do |sub_sv|
             if sub_sv[/.+ as .+/i]
-              add_virtual_attribute(sub_sv[/ as .+/i][4..-1].strip)
+              add_virtual_attribute(sub_sv.rpartition(/ as /i).last.strip)
             elsif sub_sv[/.+\.[^\*]+/]
               add_virtual_attribute(sub_sv[/\..+/][1..-1].strip)
             end
@@ -70,73 +70,72 @@ end
 
 ::ActiveRecord::Associations::JoinDependency.class_eval do
   def instantiate(result_set, aliases)
-    primary_key = aliases.column_alias(join_root, join_root.primary_key)
+  primary_key = aliases.column_alias(join_root, join_root.primary_key)
 
-    seen = Hash.new { |h,parent_klass|
-      h[parent_klass] = Hash.new { |i,parent_id|
-        i[parent_id] = Hash.new { |j,child_klass| j[child_klass] = {} }
-      }
+  seen = Hash.new { |i, object_id|
+    i[object_id] = Hash.new { |j, child_class|
+      j[child_class] = {}
     }
+  }
 
-    model_cache = Hash.new { |h,klass| h[klass] = {} }
-    parents = model_cache[join_root]
-    column_aliases = aliases.column_aliases join_root
+  model_cache = Hash.new { |h,klass| h[klass] = {} }
+  parents = model_cache[join_root]
+  column_aliases = aliases.column_aliases join_root
 
-    message_bus = ActiveSupport::Notifications.instrumenter
+  message_bus = ActiveSupport::Notifications.instrumenter
 
-    payload = {
-        record_count: result_set.length,
-        class_name: join_root.base_klass.name
+  payload = {
+      record_count: result_set.length,
+      class_name: join_root.base_klass.name
+  }
+
+  message_bus.instrument('instantiation.active_record', payload) do
+    result_set.each { |row_hash|
+      parent_key = primary_key ? row_hash[primary_key] : row_hash
+      # DISTINCTION PART > join_root.instantiate(row_hash, column_aliases, aliases.slice_selected_attr_types( result_set.column_types ) )
+      # PREVIOUS         > join_root.instantiate(row_hash, column_aliases )
+      parent = parents[parent_key] ||= join_root.instantiate(row_hash, column_aliases, aliases.slice_selected_attr_types( result_set.column_types ) )
+      construct(parent, join_root, row_hash, result_set, seen, model_cache, aliases)
     }
-
-    message_bus.instrument('instantiation.active_record', payload) do
-      result_set.each { |row_hash|
-        parent_key = primary_key ? row_hash[primary_key] : row_hash
-        # DISTINCTION PART > join_root.instantiate(row_hash, column_aliases, aliases.slice_selected_attr_types( result_set.column_types ) )
-        # PREVIOUS         > join_root.instantiate(row_hash, column_aliases )
-        parent = parents[parent_key] ||= join_root.instantiate(row_hash, column_aliases, aliases.slice_selected_attr_types( result_set.column_types ) )
-        construct(parent, join_root, row_hash, result_set, seen, model_cache, aliases)
-      }
-    end
-
-    parents.values
   end
+  parents.values
+end
 end
 
 
 ::ActiveRecord::FinderMethods.class_eval do
   def find_with_associations
-      # NOTE: the JoinDependency constructed here needs to know about
-      #       any joins already present in `self`, so pass them in
-      #
-      # failing to do so means that in cases like activerecord/test/cases/associations/inner_join_association_test.rb:136
-      # incorrect SQL is generated. In that case, the join dependency for
-      # SpecialCategorizations is constructed without knowledge of the
-      # preexisting join in joins_values to categorizations (by way of
-      # the `has_many :through` for categories).
-      #
-      join_dependency = construct_join_dependency(joins_values)
+    # NOTE: the JoinDependency constructed here needs to know about
+    #       any joins already present in `self`, so pass them in
+    #
+    # failing to do so means that in cases like activerecord/test/cases/associations/inner_join_association_test.rb:136
+    # incorrect SQL is generated. In that case, the join dependency for
+    # SpecialCategorizations is constructed without knowledge of the
+    # preexisting join in joins_values to categorizations (by way of
+    # the `has_many :through` for categories).
+    #
+    join_dependency = construct_join_dependency(joins_values)
 
-      aliases  = join_dependency.aliases
-      relation = select aliases.columns
-      relation = apply_join_dependency(relation, join_dependency)
+    aliases  = join_dependency.aliases
+    relation = select aliases.columns
+    relation = apply_join_dependency(relation, join_dependency)
 
-      if block_given?
-        yield relation
+    if block_given?
+      yield relation
+    else
+      if ActiveRecord::NullRelation === relation
+        []
       else
-        if ActiveRecord::NullRelation === relation
-          []
-        else
-          arel = relation.arel
-          rows = connection.select_all(arel, 'SQL', arel.bind_values + relation.bind_values)
-          #DISTINCTION IS HERE:
-          # now we gently mokey-patching existing column aliases with select values
-          aliases.update_aliases_to_select_values(values[:select]) unless values[:select].blank?
+        arel = relation.arel
+        rows = connection.select_all(arel, 'SQL', relation.bound_attributes)
+        #1 DISTINCTION IS HERE:
+        # now we gently mokey-patching existing column aliases with select values
+        aliases.update_aliases_to_select_values(values[:select]) unless values[:select].blank?
 
-          join_dependency.instantiate(rows, aliases)
-        end
+        join_dependency.instantiate(rows, aliases)
       end
     end
+  end
 end
 
 
