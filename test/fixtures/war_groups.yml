@@ -1,0 +1,14 @@
+# == Schema Information
+#
+# Table name: users
+#
+#  id                     :integer          not null, primary key
+
+# Read about fixtures at http://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+
+fellowship:
+  coalition: 'fellowship & co'
+
+sauronship:
+  coalition: 'nazguls & co'
