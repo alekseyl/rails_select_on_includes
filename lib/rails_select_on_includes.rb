@@ -33,7 +33,7 @@ require 'active_support/core_ext/string/filters'
         when String
           sv.split( ", " ).each do |sub_sv|
             if sub_sv[/.+ as .+/i]
-              add_virtual_attribute(sub_sv[/ as .+/i][4..-1].strip)
+              add_virtual_attribute(sub_sv.rpartition(/ as /i).last.strip)
             elsif sub_sv[/.+\.[^\*]+/]
               add_virtual_attribute(sub_sv[/\..+/][1..-1].strip)
             end
