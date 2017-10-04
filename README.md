@@ -90,7 +90,7 @@ Works out of the box, monkey-patches base-class alias columns, for select attrib
 It not affecting query creation, since query already contains all columns, i.e. to_sql returns same string.
 Works with selection in all formats:
 
-1 'table_name.column' or 'table_name.column as column_1' or "distinct on(..) table_name.column as column_1"  
+1 'table_name.column' or 'table_name.column as column_1' or "distinct on(..) table_name.column as column_1" or "(select ..) as column_1"  
 
 2 { table_name: column } or { table_name: [column1, column2] }
 
@@ -102,7 +102,7 @@ Works with selection in all formats:
 
 Поддерживает select в следующих форматах :
 
-1 'table_name.column' or 'table_name.column as column_1' or "distinct on(..) table_name.column as column_1"  
+1 'table_name.column' or 'table_name.column as column_1' or "distinct on(..) table_name.column as column_1" or "(select ..) as column_1"  
 
 2 { table_name: column } or { table_name: [column1, column2] }
 
