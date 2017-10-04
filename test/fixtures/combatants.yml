@@ -1,0 +1,32 @@
+# == Schema Information
+#
+# Table name: users
+#
+#  id                     :integer          not null, primary key
+
+# Read about fixtures at http://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+
+boromir:
+  name: Boromir
+  strength: 10
+  dexterity: 5
+  life: 100
+  speciality: warrior
+  war_group: fellowship
+
+frodo:
+  name: Frodo
+  strength: 3
+  dexterity: 10
+  life: 35
+  speciality: burglar
+  war_group: fellowship
+
+orc:
+  name: Uruk
+  strength: 15
+  dexterity: 4
+  life: 150
+  speciality: dark warrior
+  war_group: sauronship

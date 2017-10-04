@@ -20,17 +20,16 @@ require 'active_support/core_ext/string/filters'
     @virtual_attributes_names = []
   end
   # valid formats are:
-  # 1 'table_name.column' or 'table_name.column as column_1' will be parsed! distinct on can be used also
-  # 2 {table_name: column} or { table_name: [column1, column2] }
-  # 3 table_name: 2
+  # 'table_name.column' or 'table_name.column as column_1' will be parsed! distinct on can be used also
+  # '(subquery with AS) AS column_1 '
+  # Select with aliased arel function: .select(Comment.arel_table[:id].count.as('comments_count'))
+  # Select with aliased arel attirubte: .select(Comment.arel_table[:column].as('column_alias'))
   def update_aliases_to_select_values( select_values )
     return if select_values.blank?
     select_values.each do |sv|
       # if sv is symbol that we assume that its a base table column and it will be aliased and added as usual
       # all we need is some specials joins+select from related tables
       case sv
-        when Hash
-          flatten_hash_values(sv).each { |sub_sv| add_virtual_attribute(sub_sv) }
         when String
           sv.split( ", " ).each do |sub_sv|
             if sub_sv[/.+ as .+/i]
