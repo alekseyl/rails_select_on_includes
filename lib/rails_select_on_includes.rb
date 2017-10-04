@@ -1,6 +1,5 @@
 require 'active_support/deprecation'
 require 'active_support/core_ext/string/filters'
-require 'pry-byebug'
 
 
 ::ActiveRecord::Associations::JoinDependency::Aliases.class_eval do # :nodoc:
