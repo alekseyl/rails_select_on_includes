@@ -112,14 +112,15 @@ end
 ::ActiveRecord::Relation.class_eval do
   private
 
-    def exec_queries(&block)
+  def exec_queries(&block)
+    skip_query_cache_if_necessary do
       @records =
           if eager_loading?
-            find_with_associations do |relation, join_dependency|
+            apply_join_dependency do |relation, join_dependency|
               if ActiveRecord::NullRelation === relation
                 []
               else
-                rows = connection.select_all(relation.arel, "SQL", relation.bound_attributes)
+                rows = connection.select_all(relation.arel, "SQL")
                 #1 DISTINCTION IS HERE:
                 # now we gently mokey-patching existing column aliases with select values
                 join_dependency.aliases.update_aliases_to_select_values(values[:select]) unless values[:select].blank?
@@ -128,7 +129,7 @@ end
               end.freeze
             end
           else
-            klass.find_by_sql(arel, bound_attributes, &block).freeze
+            klass.find_by_sql(arel, &block).freeze
           end
 
       preload = preload_values
@@ -144,5 +145,7 @@ end
       @loaded = true
       @records
     end
+  end
+
 
 end
