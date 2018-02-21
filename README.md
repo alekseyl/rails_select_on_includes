@@ -74,8 +74,11 @@ Add this line to your application's Gemfile:
 #rails 4
 gem 'rails_select_on_includes', '~> 0.4.11' 
 
-#rails 5
-gem 'rails_select_on_includes', '~> 0.5.7' 
+#rails 5.1.4
+gem 'rails_select_on_includes', '~> 5.1.4.0' 
+
+#rails 5.1.5
+gem 'rails_select_on_includes', '~> 5.1.5.0'
 ```
 
 And then execute:
