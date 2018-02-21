@@ -62,80 +62,87 @@ require 'active_support/core_ext/string/filters'
   end
 end
 
+#
 ::ActiveRecord::Associations::JoinDependency::JoinBase.class_eval do
   def instantiate(row, aliases, column_types = {}, &block)
     base_klass.instantiate(extract_record(row, aliases), column_types, &block)
   end
 end
 
+
 ::ActiveRecord::Associations::JoinDependency.class_eval do
-  def instantiate(result_set, aliases)
-  primary_key = aliases.column_alias(join_root, join_root.primary_key)
+  def instantiate(result_set, &block)
+    primary_key = aliases.column_alias(join_root, join_root.primary_key)
 
-  seen = Hash.new { |i, object_id|
-    i[object_id] = Hash.new { |j, child_class|
-      j[child_class] = {}
+    seen = Hash.new { |i, object_id|
+      i[object_id] = Hash.new { |j, child_class|
+        j[child_class] = {}
+      }
     }
-  }
 
-  model_cache = Hash.new { |h,klass| h[klass] = {} }
-  parents = model_cache[join_root]
-  column_aliases = aliases.column_aliases join_root
+    model_cache = Hash.new { |h, klass| h[klass] = {} }
+    parents = model_cache[join_root]
+    column_aliases = aliases.column_aliases join_root
 
-  message_bus = ActiveSupport::Notifications.instrumenter
+    message_bus = ActiveSupport::Notifications.instrumenter
 
-  payload = {
-      record_count: result_set.length,
-      class_name: join_root.base_klass.name
-  }
-
-  message_bus.instrument('instantiation.active_record', payload) do
-    result_set.each { |row_hash|
-      parent_key = primary_key ? row_hash[primary_key] : row_hash
-      # DISTINCTION PART > join_root.instantiate(row_hash, column_aliases, aliases.slice_selected_attr_types( result_set.column_types ) )
-      # PREVIOUS         > join_root.instantiate(row_hash, column_aliases )
-      parent = parents[parent_key] ||= join_root.instantiate(row_hash, column_aliases, aliases.slice_selected_attr_types( result_set.column_types ) )
-      construct(parent, join_root, row_hash, result_set, seen, model_cache, aliases)
+    payload = {
+        record_count: result_set.length,
+        class_name: join_root.base_klass.name
     }
-  end
-  parents.values
-end
-end
 
+    message_bus.instrument("instantiation.active_record", payload) do
+      result_set.each { |row_hash|
+        parent_key = primary_key ? row_hash[primary_key] : row_hash
+        # DISTINCTION PART > join_root.instantiate(row_hash, column_aliases, aliases.slice_selected_attr_types( result_set.column_types ) )
+        # PREVIOUS         > join_root.instantiate(row_hash, column_aliases )
+        # parent = parents[parent_key] ||= join_root.instantiate(row_hash, column_aliases, &block)
 
-::ActiveRecord::FinderMethods.class_eval do
-  def find_with_associations
-    # NOTE: the JoinDependency constructed here needs to know about
-    #       any joins already present in `self`, so pass them in
-    #
-    # failing to do so means that in cases like activerecord/test/cases/associations/inner_join_association_test.rb:136
-    # incorrect SQL is generated. In that case, the join dependency for
-    # SpecialCategorizations is constructed without knowledge of the
-    # preexisting join in joins_values to categorizations (by way of
-    # the `has_many :through` for categories).
-    #
-    join_dependency = construct_join_dependency(joins_values)
-
-    aliases  = join_dependency.aliases
-    relation = select aliases.columns
-    relation = apply_join_dependency(relation, join_dependency)
-
-    if block_given?
-      yield relation
-    else
-      if ActiveRecord::NullRelation === relation
-        []
-      else
-        arel = relation.arel
-        rows = connection.select_all(arel, 'SQL', relation.bound_attributes)
-        #1 DISTINCTION IS HERE:
-        # now we gently mokey-patching existing column aliases with select values
-        aliases.update_aliases_to_select_values(values[:select]) unless values[:select].blank?
-
-        join_dependency.instantiate(rows, aliases)
-      end
+        parent = parents[parent_key] ||=
+            join_root.instantiate(row_hash, column_aliases, aliases.slice_selected_attr_types( result_set.column_types ), &block )
+        construct(parent, join_root, row_hash, result_set, seen, model_cache, aliases)
+      }
     end
+
+    parents.values
   end
 end
 
 
+::ActiveRecord::Relation.class_eval do
+  private
+
+    def exec_queries(&block)
+      @records =
+          if eager_loading?
+            find_with_associations do |relation, join_dependency|
+              if ActiveRecord::NullRelation === relation
+                []
+              else
+                rows = connection.select_all(relation.arel, "SQL", relation.bound_attributes)
+                #1 DISTINCTION IS HERE:
+                # now we gently mokey-patching existing column aliases with select values
+                join_dependency.aliases.update_aliases_to_select_values(values[:select]) unless values[:select].blank?
+
+                join_dependency.instantiate(rows, &block)
+              end.freeze
+            end
+          else
+            klass.find_by_sql(arel, bound_attributes, &block).freeze
+          end
+
+      preload = preload_values
+      preload += includes_values unless eager_loading?
+      preloader = nil
+      preload.each do |associations|
+        preloader ||= build_preloader
+        preloader.preload @records, associations
+      end
+
+      @records.each(&:readonly!) if readonly_value
+
+      @loaded = true
+      @records
+    end
+
+end

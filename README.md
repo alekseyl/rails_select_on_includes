@@ -2,8 +2,11 @@
 Selected virtual attributes will be now typecasted as usual attributes
 
 #Rails version
-Supports rails 4.x and rails 5 now! 
-Maser is now runs on 5.x, rails_4 branch is for rails 4 support
+Supports rails 4.x and rails 5-5.1.4, and 5.1.5 now! 
+
+Master is now runs on rails 5.1.5, 
+rails_5.1.4 branch is for rails less than 5.1.5,
+rails_4 branch is for rails 4 support
 
 # RailsSelectOnIncludes
 
