@@ -41,6 +41,8 @@ require 'active_support/core_ext/string/filters'
           end
         when Arel::Nodes::As
           add_virtual_attribute(sv.right)
+        when Arel::Nodes::TableAlias
+          add_virtual_attribute(sv.right)
         when Arel::Nodes::Function
           add_virtual_attribute(sv.alias) if sv.alias.present?
       end
