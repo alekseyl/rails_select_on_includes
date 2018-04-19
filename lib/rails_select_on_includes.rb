@@ -86,7 +86,7 @@ end
     message_bus = ActiveSupport::Notifications.instrumenter
 
     payload = {
-        record_count: result_set.length,
+        record_count: result_set.respond_to?(:length) ? result_set.length : result_set.rows.length,
         class_name: join_root.base_klass.name
     }
 
