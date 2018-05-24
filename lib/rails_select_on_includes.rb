@@ -30,8 +30,8 @@ require 'active_support/core_ext/string/filters'
       # if sv is symbol that we assume that its a base table column and it will be aliased and added as usual
       # all we need is some specials joins+select from related tables
       case sv
-        when String
-          sv.split( ", " ).each do |sub_sv|
+       when String
+          sv.split(/,[\s$]*/).each do |sub_sv|
             if sub_sv[/.+ as .+/i]
               add_virtual_attribute(sub_sv.rpartition(/ as /i).last.strip)
             elsif sub_sv[/.+\.[^\*]+/]
