@@ -32,7 +32,7 @@ require 'active_support/core_ext/string/filters'
       # all we need is some specials joins+select from related tables
       case sv
        when String
-          sv.split( ", " ).each do |sub_sv|
+          sv.split(/,[\s$]*/).each do |sub_sv|
             if sub_sv[/.+ as .+/i]
               add_virtual_attribute(sub_sv.rpartition(/ as /i).last.strip)
             elsif sub_sv[/.+\.[^\*]+/]
