@@ -122,6 +122,7 @@ end
               if ActiveRecord::NullRelation === relation
                 []
               else
+                relation = join_dependency.apply_column_aliases(relation)
                 rows = connection.select_all(relation.arel, "SQL")
                 #1 DISTINCTION IS HERE:
                 # now we gently mokey-patching existing column aliases with select values
