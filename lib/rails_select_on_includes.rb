@@ -125,7 +125,7 @@ end
                 rows = connection.select_all(relation.arel, "SQL")
                 #1 DISTINCTION IS HERE:
                 # now we gently mokey-patching existing column aliases with select values
-                join_dependency.aliases.update_aliases_to_select_values(values[:select]) unless values[:select].blank?
+                join_dependency.send(:aliases).update_aliases_to_select_values(values[:select]) unless values[:select].blank?
 
                 join_dependency.instantiate(rows, &block)
               end.freeze
