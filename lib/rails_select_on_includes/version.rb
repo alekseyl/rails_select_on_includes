@@ -1,3 +1,3 @@
 module RailsSelectOnIncludes
-  VERSION = "5.2.0.3"
+  VERSION = "5.2.1"
 end

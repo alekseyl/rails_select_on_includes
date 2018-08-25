@@ -82,7 +82,7 @@ gem 'rails_select_on_includes', '~> 5.1.5.0'
 
 
 #rails 5.2
-gem 'rails_select_on_includes', '~> 5.2.0.1'
+gem 'rails_select_on_includes', '~> 5.2.1'
 ```
 
 And then execute:
