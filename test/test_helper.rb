@@ -1,6 +1,7 @@
 require 'active_record'
 require 'minitest/autorun'
-require 'pry-byebug'
+require 'byebug'
+require 'niceql'
 
 ActiveRecord::Base.establish_connection(
     adapter:  'sqlite3',
