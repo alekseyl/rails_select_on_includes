@@ -10,13 +10,10 @@ require 'active_support/core_ext/string/filters'
         i[column.name] = column.alias
       }
     }
-    @name_and_alias_cache = tables.each_with_object({}) { |table,h|
-      h[table.node] = table.columns.map { |column|
-        [column.name, column.alias]
-      }
+    @columns_cache = tables.each_with_object({}) { |table, h|
+      h[table.node] = table.columns
       @base_class_node_aliases ||= h[table.node] if table.node.is_a?(ActiveRecord::Associations::JoinDependency::JoinBase)
     }
-
     @virtual_attributes_names = []
   end
   # valid formats are:
@@ -59,7 +56,7 @@ require 'active_support/core_ext/string/filters'
   end
 
   def add_virtual_attribute(selected_column)
-    @base_class_node_aliases << [selected_column, selected_column]
+    @base_class_node_aliases << ActiveRecord::Associations::JoinDependency::Aliases::Column.new(selected_column, selected_column)
     @virtual_attributes_names << selected_column
   end
 end
@@ -102,7 +99,7 @@ end
 
         parent = parents[parent_key] ||=
             join_root.instantiate(row_hash, column_aliases, aliases.slice_selected_attr_types( result_set.column_types ), &block )
-        construct(parent, join_root, row_hash, result_set, seen, model_cache, aliases)
+        construct(parent, join_root, row_hash, seen, model_cache)
       }
     end
 
