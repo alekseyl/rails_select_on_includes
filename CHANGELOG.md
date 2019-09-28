@@ -1,3 +1,6 @@
+#6.0.0
+* support for rails 6.0, master now on rails 6.
+
 # 5.2.1
 * resolve issue #16
 * add development dependencies on niceql and byebug

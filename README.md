@@ -71,6 +71,9 @@ post.comments.first.testval # Undefined method!
 Add this line to your application's Gemfile:
 
 ```ruby
+#rails 6
+gem 'rails_select_on_includes', '~> 6.0.0'
+
 #rails 4
 gem 'rails_select_on_includes', '~> 0.4.11' 
 
