@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/alekseyl/rails_select_on_includes.svg?branch=master)](https://travis-ci.org/alekseyl/rails_select_on_includes)
+
 # New Features
 Selected virtual attributes will be now typecasted as usual attributes
 
