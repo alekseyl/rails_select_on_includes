@@ -126,7 +126,7 @@ rake test
 
 ## Contributing
 
-Bug reports and pull requests are welcome on GitHub at https://github.com/[USERNAME]/rails_select_on_includes.
+Bug reports and pull requests are welcome on GitHub at https://github.com/alekseyl/rails_select_on_includes.
 
 
 ## License
