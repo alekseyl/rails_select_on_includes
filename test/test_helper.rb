@@ -32,6 +32,10 @@ class WarGroup < ActiveRecord::Base
     NESTED
   end
 
+  scope :test_select_without_as, -> (name) do
+    includes(:combatants).where(combatants: {name: name }).select( 'COUNT(combatants.id)  warriors_count' )
+  end
+
   has_many :combatants
 end
 

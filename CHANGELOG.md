@@ -1,3 +1,6 @@
+#6.0.1
+* select work without 'as' 
+
 #6.0.0
 * support for rails 6.0, master now on rails 6.
 
