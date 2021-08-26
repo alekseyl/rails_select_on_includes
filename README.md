@@ -1,4 +1,8 @@
 [![Build Status](https://travis-ci.org/alekseyl/rails_select_on_includes.svg?branch=master)](https://travis-ci.org/alekseyl/rails_select_on_includes)
+# Not needed as of Rails 6.0.3
+The initial bug which this gem fixes - https://github.com/rails/rails/issues/15185 was finally fixed as https://github.com/rails/rails/issues/34889
+
+Fixed in Rails >= 6.0.3 (https://github.com/rails/rails/blob/v6.0.3/activerecord/CHANGELOG.md#rails-603-may-06-2020)
 
 # New Features
 Selected virtual attributes will be now typecasted as usual attributes
